@@ -1,0 +1,167 @@
+
+    public Object[] castRay(double angleDifference, Actor player) {
+        Vector2 playerLocation = MathUtils.getCenterOfPawn(player);
+        double rotation = player.getRotation();
+        double Ay;
+        double Ax;
+
+        double Xa;
+        int Ya;
+
+        System.out.println(Math.toRadians(rotation));
+
+        if (rotation < 180 && rotation > 0){
+            System.out.println("up");
+            Ay = Math.floor(playerLocation.y/rectSize) * (rectSize) - 1;
+            Ya = -rectSize;
+        }else {
+            Ay = Math.floor(playerLocation.y/rectSize) * (rectSize) + rectSize;
+            Ya = rectSize;
+        }
+
+        System.out.println("AYYYY" + Ay);
+
+        Xa = Ya / Math.tan(Math.toRadians(rotation));
+        Ax = playerLocation.x + (playerLocation.y - Ay)/ Math.tan(Math.toRadians(rotation));
+
+        /*
+        int repetitionHorizontal = 0;
+
+        while (repetitionHorizontal < mapSize/rectSize){
+            for (Map.Entry<Rectangle, Integer> entry : rectanglesData.entrySet()) {
+                if (MathUtils.isColliding(new Rectangle(Ax, Ay, 1, 1), entry.getKey())){
+                    repetitionHorizontal = mapSize/rectSize;
+                    break;
+                }
+            }
+            if (repetitionHorizontal < mapSize/rectSize){
+                Ax = Ax + Xa;
+                Ay = Ay + Ya;
+                repetitionHorizontal++;
+            }else break;
+        }
+         */
+
+        for (int i = 0; i < 3; i++) {
+            Ax = Ax + Xa;
+            Ay = Ay + Ya;
+        }
+
+        Vector2 hor = new Vector2(Ax, Ay);
+        Vector2 pc = MathUtils.getCenterOfPawn(player);
+
+        GraphicsContext gc = Shoot3D.getInstance().getGc();
+
+        gc.setLineWidth(5);
+        gc.setStroke(Color.RED);
+        gc.strokeLine(pc.x, pc.y, hor.x, hor.y);
+        return null;
+    }
+
+    public Object[] castRayd(double angleDifference, Actor player) {
+        double normalizedRayAngle = normalizeAngle(player.getRotation() + angleDifference);
+        double rayAngleHorizontal = normalizeAngle(player.getRotation() + angleDifference);
+
+        double Ay;
+        double Ax;
+
+        double Xa;
+        int Ya;
+
+        System.out.println(normalizedRayAngle);
+
+        if (normalizedRayAngle < 360 && normalizedRayAngle > 180){
+            Ay = Math.floor(player.location.y/rectSize) * (rectSize) - 1;
+            Ya = -rectSize;
+            rayAngleHorizontal = 360 - rayAngleHorizontal;
+        }else {
+            Ay = Math.floor(player.location.y/rectSize) * (rectSize) + rectSize;
+            Ya = rectSize;
+        }
+
+        Xa = rectSize / Math.tan(Math.toRadians(rayAngleHorizontal));;
+        Ax = player.location.x + (player.location.y - Ay)/ Math.tan(Math.toRadians(rayAngleHorizontal));
+
+
+        int repetitionHorizontal = 0;
+
+        while (repetitionHorizontal < mapSize/rectSize){
+            for (Map.Entry<Rectangle, Integer> entry : rectanglesData.entrySet()) {
+                if (MathUtils.isColliding(new Rectangle(Ax, Ay, 1, 1), entry.getKey())){
+                    repetitionHorizontal = mapSize/rectSize;
+                    break;
+                }
+            }
+            if (repetitionHorizontal < mapSize/rectSize){
+                Ax = Ax + Xa;
+                Ay = Ay + Ya;
+                repetitionHorizontal++;
+            }else break;
+        }
+
+        Vector2 horizontalHit = new Vector2(Ax, Ay);
+
+        //Check Vertical lines
+        double rayAngleVertical = normalizeAngle(player.getRotation() + angleDifference);
+
+        double Bx;
+        double By;
+        int Xb;
+        double Yb;
+
+        if (normalizedRayAngle > 90 && normalizedRayAngle < 270){
+            System.out.println("Gauche");
+            Bx = Math.floor(player.location.x/rectSize) * rectSize - 1;
+            Xb = -rectSize;
+            rayAngleVertical = 360 - rayAngleVertical;
+        }else {
+            System.out.println("Droite");
+            Bx = Math.floor(player.location.x/rectSize) * (rectSize) + rectSize;
+            Xb = rectSize;
+        }
+
+        Yb = rectSize*Math.tan(Math.toRadians(rayAngleVertical));
+
+        //TODO Opti tan
+        By = player.location.y + (player.location.x-Bx) * Math.tan(Math.toRadians(rayAngleVertical));
+
+        int repetitionVertical = 0;
+
+        while (repetitionVertical < mapSize/rectSize){
+            for (Map.Entry<Rectangle, Integer> entry : rectanglesData.entrySet()) {
+                if (MathUtils.isColliding(new Rectangle(Bx, By, 1, 1), entry.getKey())){
+                    repetitionVertical = mapSize/rectSize;
+                    break;
+                }
+            }
+            if (repetitionVertical < mapSize/rectSize){
+                Bx = Bx + Xb;
+                By = By + Yb;
+                repetitionVertical++;
+            }else break;
+        }
+        Vector2 verticalHit = new Vector2(Bx, By);
+
+        Vector2 centerPlayerLocation = MathUtils.getCenterOfPawn(player);
+
+        double horizontalDistance = Math.sqrt(Math.pow(centerPlayerLocation.x-horizontalHit.x,2) + Math.pow(centerPlayerLocation.y-horizontalHit.y,2));
+        double verticalDistance = Math.sqrt(Math.pow(centerPlayerLocation.x-verticalHit.x,2) + Math.pow(centerPlayerLocation.y-verticalHit.y,2));
+
+        GraphicsContext gc = Shoot3D.getInstance().getGc();
+        gc.setLineWidth(5);
+        gc.setStroke(Color.RED);
+
+        gc.strokeLine(horizontalHit.x, horizontalHit.y, centerPlayerLocation.x,centerPlayerLocation.y);
+        gc.setStroke(Color.GREEN);
+
+        gc.strokeLine(verticalHit.x, verticalHit.y, centerPlayerLocation.x,centerPlayerLocation.y);
+
+
+        if (horizontalDistance < verticalDistance){
+            //gc.strokeLine(horizontalHit.x, horizontalHit.y, centerPlayerLocation.x,centerPlayerLocation.y);
+            return new Object[]{horizontalHit, horizontalDistance};
+        }else {
+            //gc.strokeLine(verticalHit.x, verticalHit.y, centerPlayerLocation.x,centerPlayerLocation.y);
+            return new Object[]{verticalHit, verticalDistance};
+        }
+    }
